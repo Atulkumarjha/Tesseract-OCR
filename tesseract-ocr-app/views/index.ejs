@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesseract OCR</title>
+</head>
+<body>
+    <h1>OCR FOR AADHAAR & PAN</h1>
+    <form action=""/Upload" method=""POST" enctype=""multipart/form-data">
+    <label>Aadhaar Card Image:</label>
+    <input type="file" name="aadhaar" accept="image/*" required><br><br>
+
+    <label>PAN Card Image:</label>
+    <input type="file" name="pan" accept="image/*" required><br><br>
+
+    <button type="submit">Upload & Extract</button>
+
+    <hr>
+    </form>
+
+    <div>
+        <h2>Aadhaar JSON Output</h2>
+        <pre><%= JSON.stringify(aadhaarData, null, 2) %></pre>
+    </div>
+
+    <div>
+        <h2>PAN JSON Output</h2>
+        <pre><%= JSON.stringify(panData, null, 2) %></pre>
+    </div>
+</body>
+</html>
