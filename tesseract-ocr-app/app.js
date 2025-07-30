@@ -17,11 +17,15 @@ const storage = multer.diskStorage({
         cb(null, `${Date.now()}-${file.originalname}`)
 });
 
+const upload = multer({ 
+    storage
+});
+
 app.get('/', (req,res) => {
     res.render('index', { aadhaarData: null, panData: null });
 });
 
-app.post('/uploads', uploads.fields([{ name: "aadaar" }, { name: 'pan' }]), async (req,res) => {
+app.post('/upload', upload.fields([{ name: "aadhaar" }, { name: 'pan' }]), async (req,res) => {
     const files = req.files;
     let aadhaarText ='', panText='';
 
