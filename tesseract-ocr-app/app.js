@@ -39,16 +39,22 @@ app.post('/upload', upload.fields([{ name: "aadhaar" }, { name: 'pan' }]), async
         }
     };
 
-    // Stricter filter for name extraction: only alphabetic, no numbers/special chars, not generic labels
-    const isLikelyName = line =>
-        /^[A-Za-z ]{3,}$/.test(line) &&
-        !/^(MALE|FEMALE|DOB|YEAR|GOVERNMENT|INDIA|AADHAAR|UNIQUE IDENTIFICATION AUTHORITY|INCOME TAX DEPARTMENT|Permanent Account Number|GOVT)$/i.test(line);
+    // Stricter filter for name extraction: only alphabetic, no numbers/special chars, not generic labels, not too short, not all uppercase
+    const isLikelyName = line => {
+        if (!line || line.length < 3) return false;
+        if (!/^[A-Za-z ]+$/.test(line)) return false;
+        if (/^(MALE|FEMALE|DOB|YEAR|GOVERNMENT|INDIA|AADHAAR|UNIQUE IDENTIFICATION AUTHORITY|INCOME TAX DEPARTMENT|Permanent Account Number|GOVT)$/i.test(line)) return false;
+        if (line === line.toUpperCase()) return false; // avoid all-uppercase lines
+        return true;
+    };
 
     // High-level refinement for Aadhaar name and number extraction
     function parseAadhaar(text) {
         // Clean up common OCR mistakes
         text = text.replace(/[Oo]/g, '0').replace(/[lI]/g, '1');
-        const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+        let lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+        // Remove lines that are too short or contain numbers/special chars
+        lines = lines.filter(line => line.length > 2);
         let name = '';
         let aadhaarNumber = '';
 
@@ -77,9 +83,12 @@ app.post('/upload', upload.fields([{ name: "aadhaar" }, { name: 'pan' }]), async
             }
         }
 
-        // Heuristic 3: Find first line that is a likely name
+        // Heuristic 3: Find the longest likely name line
         if (!name) {
-            name = lines.find(isLikelyName);
+            let candidates = lines.filter(isLikelyName);
+            if (candidates.length) {
+                name = candidates.reduce((a, b) => a.length >= b.length ? a : b);
+            }
         }
 
         // Fallback: line after DOB or Year of Birth
@@ -99,7 +108,9 @@ app.post('/upload', upload.fields([{ name: "aadhaar" }, { name: 'pan' }]), async
     function parsePAN(text) {
         // Clean up common OCR mistakes
         text = text.replace(/[Oo]/g, '0').replace(/[lI]/g, '1');
-        const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+        let lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+        // Remove lines that are too short or contain numbers/special chars
+        lines = lines.filter(line => line.length > 2);
         let name = '';
         let panNumber = '';
 
@@ -128,9 +139,12 @@ app.post('/upload', upload.fields([{ name: "aadhaar" }, { name: 'pan' }]), async
             }
         }
 
-        // Heuristic 3: Find first line that is a likely name
+        // Heuristic 3: Find the longest likely name line
         if (!name) {
-            name = lines.find(isLikelyName);
+            let candidates = lines.filter(isLikelyName);
+            if (candidates.length) {
+                name = candidates.reduce((a, b) => a.length >= b.length ? a : b);
+            }
         }
 
         // Fallback: line after 'Father' or 'S/O', 'D/O', 'W/O'
